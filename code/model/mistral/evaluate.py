@@ -1,3 +1,6 @@
+from peft import PeftModel
+
+
 def evaluate(y_true, y_pred):
     labels = ['Positive', 'Neutral', 'Negative']
     mapping = {'Positive': 2, 'Neutral': 1, 'Negative': 0}
@@ -16,7 +19,7 @@ def evaluate(y_true, y_pred):
 
     for label in unique_labels:
         label_indices = [i for i in range(len(y_true))
-                        if y_true[i] == label]
+                         if y_true[i] == label]
         label_y_true = [y_true[i] for i in label_indices]
         label_y_pred = [y_pred[i] for i in label_indices]
         accuracy = accuracy_score(label_y_true, label_y_pred)
@@ -32,15 +35,19 @@ def evaluate(y_true, y_pred):
     print('\nConfusion Matrix:')
     print(conf_matrix)
 
+
+
 def predict(X_test, model, tokenizer):
+    ft_model = PeftModel.from_pretrained(model, "/content/output/checkpoint-200")
     y_pred = []
     for i in tqdm(range(len(X_test))):
         prompt = X_test.iloc[i]["comment"]
         pipe = pipeline(task="text-generation",
-                        model=model,
+                        model=ft_model,
                         tokenizer=tokenizer,
                         max_new_tokens = 1,
-                        temperature = 0.0,)
+                        temperature = 0.0,
+                       )
         result = pipe(prompt, pad_token_id=pipe.tokenizer.eos_token_id)
         answer = result[0]['generated_text'].split("=")[-1].lower()
         if "Positive" in answer:
@@ -56,12 +63,11 @@ y_pred = predict(X_test, model, tokenizer)
 evaluate(y_true, y_pred)
 
 
-
 y_pred = predict(X_test, model, tokenizer)
 evaluate(y_true, y_pred)
 
 evaluation = pd.DataFrame({'comment': X_test["comment"],
-                        'y_true':y_true,
-                        'y_pred': y_pred},
-                        )
-evaluation.to_csv("model-predict.csv", index=False)
+                           'y_true':y_true,
+                           'y_pred': y_pred},
+                         )
+evaluation.to_csv("mistral-predict.csv", index=False)

@@ -26,6 +26,7 @@ peft_config = LoraConfig(
     r=64,
     bias="none",
     task_type="CAUSAL_LM",
+    use_dora=True,
 )
 
 training_arguments = TrainingArguments(
